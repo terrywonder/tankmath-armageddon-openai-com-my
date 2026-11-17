@@ -1,0 +1,202 @@
+{
+  "entities": {
+    "PlayerSave": {
+      "title": "PlayerSave",
+      "description": "Cross-device cloud save progression and user preferences for TankMath Armageddon.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the player."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "description": "Public commander callsign."
+        },
+        "totalXp": {
+          "type": "integer",
+          "description": "Cumulative XP earned across sessions."
+        },
+        "credits": {
+          "type": "integer",
+          "description": "Spendable shell credits earned from battles."
+        },
+        "unlockedStage": {
+          "type": "integer",
+          "description": "Highest unlocked tutorial/campaign stage (1-20)."
+        },
+        "tutorialCompleted": {
+          "type": "boolean",
+          "description": "Whether the dynamic tutorial level has been completed."
+        },
+        "bestScore": {
+          "type": "integer",
+          "description": "Highest single-run score achieved."
+        },
+        "bestStreak": {
+          "type": "integer",
+          "description": "Longest consecutive correct equation streak."
+        },
+        "totalSolved": {
+          "type": "integer",
+          "description": "Total math equations solved correctly."
+        },
+        "totalAttempted": {
+          "type": "integer",
+          "description": "Total math equations attempted."
+        },
+        "gamesPlayed": {
+          "type": "integer",
+          "description": "Total battles completed."
+        },
+        "preferredSpec": {
+          "type": "string",
+          "enum": ["eco", "balanced", "high"],
+          "description": "Device graphics optimization preset."
+        },
+        "soundEnabled": {
+          "type": "boolean",
+          "description": "Audio effects preference."
+        },
+        "tankColor": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Player tank hull hex color."
+        },
+        "unlockedWeapons": {
+          "type": "array",
+          "description": "Unlocked artillery shell identifiers (max 3)."
+        },
+        "weaponUpgrades": {
+          "type": "object",
+          "description": "Permanent weapon upgrade levels (damageLevel, radiusLevel, shellsLevel) per weapon."
+        },
+        "lastSyncedDevice": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 48,
+          "description": "Label of last synced platform (Desktop/Mobile/Tablet)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of initial save creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of most recent cloud sync."
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "totalXp",
+        "credits",
+        "unlockedStage",
+        "tutorialCompleted",
+        "bestScore",
+        "bestStreak",
+        "totalSolved",
+        "totalAttempted",
+        "gamesPlayed",
+        "preferredSpec",
+        "soundEnabled",
+        "tankColor",
+        "unlockedWeapons",
+        "weaponUpgrades",
+        "lastSyncedDevice",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Public math genius ranking entry without PII.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the ranked player."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "description": "Public commander callsign."
+        },
+        "bestScore": {
+          "type": "integer",
+          "description": "Highest single-run score."
+        },
+        "highestTier": {
+          "type": "integer",
+          "description": "Highest math difficulty tier mastered (1-5)."
+        },
+        "accuracyPct": {
+          "type": "integer",
+          "description": "Overall accuracy percentage (0-100)."
+        },
+        "bestStreak": {
+          "type": "integer",
+          "description": "Best consecutive answer streak."
+        },
+        "totalSolved": {
+          "type": "integer",
+          "description": "Total equations solved correctly."
+        },
+        "gamesPlayed": {
+          "type": "integer",
+          "description": "Total completed runs."
+        },
+        "isPublic": {
+          "type": "boolean",
+          "description": "Explicit public visibility flag for leaderboard queries."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of first leaderboard entry."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of latest rank update."
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "bestScore",
+        "highestTier",
+        "accuracyPct",
+        "bestStreak",
+        "totalSolved",
+        "gamesPlayed",
+        "isPublic",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/saves/{userId}": {
+      "schema": { "$ref": "#/entities/PlayerSave" },
+      "description": "Private per-user cloud save state synced across mobile and desktop devices."
+    },
+    "/leaderboard/{userId}": {
+      "schema": { "$ref": "#/entities/LeaderboardEntry" },
+      "description": "Global leaderboard rankings for top math geniuses (zero PII)."
+    }
+  }
+}

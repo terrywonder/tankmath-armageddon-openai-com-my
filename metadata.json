@@ -1,0 +1,6 @@
+{
+  "name": "TankMath Armageddon — Math Artillery",
+  "description": "2D vector tank artillery educational math game for openai.com.my with dynamic tutorial progression, offline play, cross-device cloud save, and global leaderboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

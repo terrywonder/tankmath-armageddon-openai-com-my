@@ -552,6 +552,22 @@ export default function App() {
       }
       setScreenState('gameover');
 
+      try {
+        const portal = (window as unknown as {
+          OpenAIPortal?: { reportGameEvent?: (p: Record<string, unknown>) => void };
+        }).OpenAIPortal;
+        portal?.reportGameEvent?.({
+          gameId: 'tankmath-armageddon',
+          levelsDelta: victory ? 1 : 0,
+          starsDelta: victory ? 3 : snapshot.correctCount >= 3 ? 2 : snapshot.correctCount >= 1 ? 1 : 0,
+          bossesDelta: snapshot.enemiesDefeated,
+          questionsDelta: snapshot.correctCount,
+          xpDelta: Math.max(15, Math.round(snapshot.score / 5)),
+        });
+      } catch {
+        // Ignore portal bridge errors in standalone mode
+      }
+
       setSave((prev) => {
         const nextSave = applyRunStatsToSave(prev, snapshot);
         writeLocalSave(nextSave);

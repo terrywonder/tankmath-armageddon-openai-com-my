@@ -45,9 +45,9 @@ export const StatusModals: React.FC<StatusModalsProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label="Game Paused"
-        className="fixed inset-0 z-30 flex items-center justify-center bg-[#090714]/75 p-4"
+        className="fixed inset-0 z-30 flex items-center justify-center bg-[#090714]/75 p-4 overflow-y-auto overscroll-contain"
       >
-        <div className="w-full max-w-md rounded-2xl border-2 border-[#312E81] bg-[#140F2D] p-6 text-white shadow-[0_6px_0_#090714]">
+        <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto my-auto rounded-2xl border-2 border-[#312E81] bg-[#140F2D] p-6 text-white shadow-[0_6px_0_#090714]">
           <h2 className="font-display text-2xl font-extrabold text-white">Battle Paused</h2>
           <p className="mt-1 text-sm text-indigo-200">
             Adjust performance settings or jump right back into the artillery duel.
@@ -110,9 +110,9 @@ export const StatusModals: React.FC<StatusModalsProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={victory ? 'Victory Summary' : 'Defeat Summary'}
-      className="fixed inset-0 z-30 flex items-center justify-center bg-[#090714]/80 p-4"
+      className="fixed inset-0 z-30 flex items-center justify-center bg-[#090714]/80 p-4 overflow-y-auto overscroll-contain"
     >
-      <div className="w-full max-w-md rounded-2xl border-2 border-[#312E81] bg-[#140F2D] p-6 text-white shadow-[0_6px_0_#090714]">
+      <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto my-auto rounded-2xl border-2 border-[#312E81] bg-[#140F2D] p-6 text-white shadow-[0_6px_0_#090714]">
         <div className="text-xs font-extrabold uppercase tracking-wider text-teal-300">
           {runStats?.mode === 'tutorial'
             ? 'O.A.I. Dynamic Tutorial'

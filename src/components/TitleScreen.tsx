@@ -77,19 +77,24 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   const scholarLevel = Math.max(1, Math.floor(save.totalXp / 300) + 1);
 
   return (
-    <div className="fixed inset-0 z-20 flex flex-col justify-between p-3 sm:p-5 pointer-events-none">
+    <div className="fixed inset-0 z-20 flex flex-col justify-between gap-2 p-3 sm:p-5 overflow-y-auto overscroll-contain">
       {/* Top O.A.I. Malaysia Portal Header Bar */}
-      <header className="pointer-events-auto w-full rounded-2xl border border-indigo-500/30 bg-[#110C28]/95 px-3.5 py-2 shadow-lg">
+      <header className="pointer-events-auto w-full shrink-0 rounded-2xl border border-indigo-500/30 bg-[#110C28]/95 px-3.5 py-2 shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-2.5">
           {/* Left: Enhanced O.A.I. Malaysia Logo + Curriculum Tag */}
           <div className="flex items-center gap-3">
-            <OaiBrandLogo />
+            <a href="../../" aria-label="Return to O.A.I. Malaysia Arcade Portal" className="hover:opacity-90 transition-opacity">
+              <OaiBrandLogo />
+            </a>
             <span className="hidden lg:inline-block h-5 w-px bg-indigo-500/30" aria-hidden="true" />
-            <span className="hidden lg:inline-flex items-center gap-1.5 rounded-md border border-indigo-500/30 bg-[#1E1642] px-2.5 py-1 text-[11px] font-bold text-amber-300">
+            <a
+              href="../../"
+              className="hidden lg:inline-flex items-center gap-1.5 rounded-md border border-indigo-500/30 bg-[#1E1642] px-2.5 py-1 text-[11px] font-bold text-amber-300 hover:border-amber-400 transition-colors"
+            >
               <span>Arcade Portal</span>
               <span aria-hidden="true" className="text-indigo-400">·</span>
               <span className="text-emerald-400">Mathematics Artillery</span>
-            </span>
+            </a>
           </div>
 
           {/* Right: Scholar Profile Pill & Hardware/Audio Utilities */}

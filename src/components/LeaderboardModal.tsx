@@ -65,7 +65,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
       aria-label="Global Leaderboard and Cloud Sync"
       className="fixed inset-0 z-40 flex items-center justify-center bg-[#090714]/80 p-3 sm:p-6"
     >
-      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border-2 border-[#312E81] bg-[#140F2D] text-white shadow-[0_8px_0_#090714]">
+      <div className="flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border-2 border-[#312E81] bg-[#140F2D] text-white shadow-[0_8px_0_#090714]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#312E81] px-5 py-4">
           <div className="flex items-center gap-2.5">

@@ -75,6 +75,38 @@ import {
 
 const SPEC_ORDER: QualityTier[] = ['eco', 'balanced', 'high'];
 
+interface PortalBridgeApi {
+  getActiveUserStats?: () => {
+    name?: string;
+    ageBand?: string;
+    lang?: string;
+    totalXp?: number;
+  };
+  updateActiveProfile?: (u: Record<string, unknown>) => unknown;
+  reportGameEvent?: (p: Record<string, unknown>) => { totalXp?: number } | null;
+  getLeaderboard?: (filter?: string) => Array<{
+    id?: string;
+    name?: string;
+    rawName?: string;
+    tankXp?: number;
+    totalXp?: number;
+    level?: number;
+  }>;
+  subscribe?: (cb: () => void) => () => void;
+}
+
+function getPortalApi(): PortalBridgeApi | undefined {
+  return (window as unknown as { OpenAIPortal?: PortalBridgeApi }).OpenAIPortal;
+}
+
+function ageBandToMathTier(ageBand?: string): MathTier {
+  if (ageBand === '5-6') return 1;
+  if (ageBand === '7-9' || ageBand === '10-12') return 2;
+  if (ageBand === '13-15') return 3;
+  if (ageBand === '16+') return 5;
+  return 2;
+}
+
 function buildEnemyTank(
   archetype: EnemyArchetype,
   index: number,
@@ -156,9 +188,21 @@ function createInitialTitleSim(tankColor: string): BattlefieldSimulationState {
 
 export default function App() {
   const isOnline = useOnlineStatus();
-  const [save, setSave] = useState<PlayerSaveData>(() => loadLocalSave());
+  const [save, setSave] = useState<PlayerSaveData>(() => {
+    const initial = loadLocalSave();
+    const portalStats = getPortalApi()?.getActiveUserStats?.();
+    if (portalStats?.name && initial.displayName === 'Cadet') {
+      return { ...initial, displayName: String(portalStats.name).slice(0, 40) };
+    }
+    return initial;
+  });
+  const [portalTotalXp, setPortalTotalXp] = useState<number>(() => {
+    return Number(getPortalApi()?.getActiveUserStats?.()?.totalXp || 0);
+  });
   const [screenState, setScreenState] = useState<GameScreenState>('title');
-  const [selectedSkirmishTier, setSelectedSkirmishTier] = useState<MathTier>(2);
+  const [selectedSkirmishTier, setSelectedSkirmishTier] = useState<MathTier>(() =>
+    ageBandToMathTier(getPortalApi()?.getActiveUserStats?.()?.ageBand)
+  );
   const [user, setUser] = useState<User | null>(null);
   const [pendingSync, setPendingSync] = useState<boolean>(() => hasPendingSync());
   const [syncing, setSyncing] = useState(false);
@@ -212,6 +256,8 @@ export default function App() {
     attemptCount: 0,
     directHits: 0,
     enemiesDefeated: 0,
+    reportedXp: 0,
+    reportedQuestions: 0,
     startTimeMs: Date.now(),
     selectedWeapon: 'standard' as WeaponId,
     unlockedWeapons: ['standard'] as WeaponId[],
@@ -226,6 +272,23 @@ export default function App() {
     pendingVictory: null as boolean | null,
   });
 
+  // Keep unified OpenAI.com.my Scholar stats synced
+  useEffect(() => {
+    const api = getPortalApi();
+    if (!api?.subscribe) return;
+    return api.subscribe(() => {
+      const nextStats = api.getActiveUserStats?.();
+      if (nextStats) {
+        if (typeof nextStats.totalXp === 'number') {
+          setPortalTotalXp(nextStats.totalXp);
+        }
+        if (nextStats.name && save.displayName === 'Cadet') {
+          setSave((prev) => ({ ...prev, displayName: String(nextStats.name).slice(0, 40) }));
+        }
+      }
+    });
+  }, [save.displayName]);
+
   // Keep sound engine synced
   useEffect(() => {
     soundEngine.setEnabled(save.soundEnabled);
@@ -237,25 +300,50 @@ export default function App() {
     simRef.current.screenState = screenState;
   }, [screenState]);
 
+  const mergeWithPortalLeaderboard = useCallback((baseEntries: LeaderboardEntry[]): LeaderboardEntry[] => {
+    const portalRows = getPortalApi()?.getLeaderboard?.('tankmath-armageddon') || [];
+    if (!portalRows.length) return baseEntries;
+    const seen = new Set(baseEntries.map((e) => e.displayName.toLowerCase()));
+    const merged = [...baseEntries];
+    portalRows.forEach((row) => {
+      const name = String(row.rawName || row.name || '').trim();
+      const score = Math.max(0, Number(row.tankXp || 0));
+      if (!name || score <= 0 || seen.has(name.toLowerCase())) return;
+      seen.add(name.toLowerCase());
+      merged.push({
+        userId: String(row.id || `portal_${name}`),
+        displayName: name,
+        bestScore: score,
+        highestTier: (Number(row.level) >= 10 ? 5 : Number(row.level) >= 5 ? 3 : 2) as MathTier,
+        accuracyPct: 92,
+        bestStreak: Math.max(2, Math.min(12, Math.floor(score / 300))),
+        totalSolved: Math.max(1, Math.floor(score / 45)),
+        gamesPlayed: Math.max(1, Math.floor(score / 250)),
+        updatedAtMs: Date.now(),
+      });
+    });
+    return merged.sort((a, b) => b.bestScore - a.bestScore).slice(0, 25);
+  }, []);
+
   const refreshLeaderboard = useCallback(async () => {
     if (!navigator.onLine) {
-      setLeaderboardEntries(loadCachedLeaderboard());
-      setLeaderboardError('Offline mode: showing cached top commanders.');
+      setLeaderboardEntries(mergeWithPortalLeaderboard(loadCachedLeaderboard()));
+      setLeaderboardError('Offline mode: showing cached & Portal top commanders.');
       return;
     }
     setLeaderboardLoading(true);
     setLeaderboardError(null);
     try {
-      const entries = await fetchGlobalLeaderboard();
+      const entries = mergeWithPortalLeaderboard(await fetchGlobalLeaderboard());
       setLeaderboardEntries(entries);
       cacheLeaderboard(entries);
     } catch {
-      setLeaderboardEntries(loadCachedLeaderboard());
-      setLeaderboardError('Could not reach live rankings. Showing cached leaderboard.');
+      setLeaderboardEntries(mergeWithPortalLeaderboard(loadCachedLeaderboard()));
+      setLeaderboardError('Could not reach live cloud rankings. Showing Malaysian Scholar + cached leaderboard.');
     } finally {
       setLeaderboardLoading(false);
     }
-  }, []);
+  }, [mergeWithPortalLeaderboard]);
 
   const performCloudSync = useCallback(
     async (targetUser: User, currentSave: PlayerSaveData, statsForLeaderboard?: RunStats) => {
@@ -495,6 +583,8 @@ export default function App() {
         attemptCount: 0,
         directHits: 0,
         enemiesDefeated: 0,
+        reportedXp: 0,
+        reportedQuestions: 0,
         startTimeMs: Date.now(),
         selectedWeapon: 'standard',
         unlockedWeapons: ['standard'],
@@ -553,17 +643,35 @@ export default function App() {
       setScreenState('gameover');
 
       try {
-        const portal = (window as unknown as {
-          OpenAIPortal?: { reportGameEvent?: (p: Record<string, unknown>) => void };
-        }).OpenAIPortal;
-        portal?.reportGameEvent?.({
+        const portal = getPortalApi();
+        const runTotalXp = Math.max(
+          meta.reportedXp,
+          Math.round(snapshot.score / 5),
+          victory ? 60 : 15
+        );
+        const xpDelta = Math.max(0, runTotalXp - meta.reportedXp);
+        const questionsDelta = Math.max(0, snapshot.correctCount - meta.reportedQuestions);
+        const starsDelta = victory
+          ? 3
+          : snapshot.correctCount >= 3
+            ? 2
+            : snapshot.correctCount >= 1
+              ? 1
+              : 0;
+        const updated = portal?.reportGameEvent?.({
           gameId: 'tankmath-armageddon',
           levelsDelta: victory ? 1 : 0,
-          starsDelta: victory ? 3 : snapshot.correctCount >= 3 ? 2 : snapshot.correctCount >= 1 ? 1 : 0,
+          starsDelta,
           bossesDelta: snapshot.enemiesDefeated,
-          questionsDelta: snapshot.correctCount,
-          xpDelta: Math.max(15, Math.round(snapshot.score / 5)),
+          questionsDelta,
+          xpDelta,
+          title: victory
+            ? `Victory in TankMath ${snapshot.mode.toUpperCase()} (${starsDelta}★)`
+            : `Completed TankMath Sortie (+${runTotalXp} XP)`,
         });
+        if (updated && typeof updated.totalXp === 'number') {
+          setPortalTotalXp(updated.totalXp);
+        }
       } catch {
         // Ignore portal bridge errors in standalone mode
       }
@@ -613,6 +721,23 @@ export default function App() {
         meta.bestStreak = Math.max(meta.bestStreak, meta.streak);
         meta.consecutiveMisses = 0;
         soundEngine.playCorrect();
+
+        const shotXp = 10 + meta.tier * 5;
+        meta.reportedXp += shotXp;
+        meta.reportedQuestions += 1;
+        try {
+          const updated = getPortalApi()?.reportGameEvent?.({
+            gameId: 'tankmath-armageddon',
+            questionsDelta: 1,
+            xpDelta: shotXp,
+            title: `Target Locked! Tier ${meta.tier} Math Solved (+${shotXp} XP)`,
+          });
+          if (updated && typeof updated.totalXp === 'number') {
+            setPortalTotalXp(updated.totalXp);
+          }
+        } catch {
+          // Ignore portal bridge errors in standalone mode
+        }
 
         if (meta.streak >= 2 && !meta.unlockedWeapons.includes('cluster')) {
           meta.unlockedWeapons.push('cluster');
@@ -1017,6 +1142,11 @@ export default function App() {
 
   const handleUpdateProfile = useCallback(
     (displayName: string, tankColor: string) => {
+      try {
+        getPortalApi()?.updateActiveProfile?.({ name: displayName });
+      } catch {
+        // Ignore portal bridge errors
+      }
       setSave((prev) => {
         const next = { ...prev, displayName, tankColor, updatedAtMs: Date.now() };
         writeLocalSave(next);
@@ -1046,6 +1176,7 @@ export default function App() {
       {screenState === 'title' && (
         <TitleScreen
           save={save}
+          portalTotalXp={portalTotalXp}
           selectedSkirmishTier={selectedSkirmishTier}
           onSelectSkirmishTier={setSelectedSkirmishTier}
           onStartGame={startGame}

@@ -76,7 +76,30 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onCycleQuality,
 }) => {
   const [showHint, setShowHint] = useState(false);
+  const [aiHint, setAiHint] = useState<{ qId: string; text: string } | null>(null);
   const [coachmarkDismissedWave, setCoachmarkDismissedWave] = useState<number | null>(null);
+
+  const handleToggleHint = () => {
+    const next = !showHint;
+    setShowHint(next);
+    if (next && (!aiHint || aiHint.qId !== question.id)) {
+      const portal = (window as unknown as {
+        OpenAIPortal?: { askGemini?: (p: Record<string, unknown>) => Promise<{ ok?: boolean; text?: string }> };
+      }).OpenAIPortal;
+      if (portal?.askGemini) {
+        portal.askGemini({
+          mode: 'hint',
+          subject: 'Mathematics',
+          topic: question.topic,
+          prompt: question.prompt,
+        }).then((res) => {
+          if (res && res.ok && res.text) {
+            setAiHint({ qId: question.id, text: res.text });
+          }
+        }).catch(() => {});
+      }
+    }
+  };
 
   const windMph = Math.round(Math.abs(hud.windAccel) / 10);
   const windDir = hud.windAccel > 4 ? 'RIGHT' : hud.windAccel < -4 ? 'LEFT' : 'CALM';
@@ -351,7 +374,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setShowHint((h) => !h)}
+                    onClick={handleToggleHint}
                     aria-label="Toggle equation hint"
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-indigo-500/30 bg-[#1E1642] text-indigo-200 hover:border-amber-400 hover:text-white"
                   >
@@ -360,7 +383,12 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 </div>
 
                 {showHint && (
-                  <p className="text-xs font-medium text-amber-200">{question.hint}</p>
+                  <p className="text-xs font-medium text-amber-200">
+                    {question.hint}
+                    {aiHint?.qId === question.id && (
+                      <span className="ml-2 text-cyan-300">· 💡 {aiHint.text}</span>
+                    )}
+                  </p>
                 )}
 
                 <div className="grid grid-cols-4 gap-2">

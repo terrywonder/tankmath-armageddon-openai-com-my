@@ -22,6 +22,7 @@ import { PWAInstallButton } from './PWAInstallButton';
 
 interface TitleScreenProps {
   save: PlayerSaveData;
+  portalTotalXp?: number;
   selectedSkirmishTier: MathTier;
   onSelectSkirmishTier: (tier: MathTier) => void;
   onStartGame: (mode: GameMode) => void;
@@ -43,6 +44,7 @@ const TIER_LABELS: Record<MathTier, string> = {
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
   save,
+  portalTotalXp,
   selectedSkirmishTier,
   onSelectSkirmishTier,
   onStartGame,
@@ -74,7 +76,8 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
     save.totalAttempted > 0
       ? Math.round((save.totalSolved / save.totalAttempted) * 100)
       : 100;
-  const scholarLevel = Math.max(1, Math.floor(save.totalXp / 300) + 1);
+  const effectiveXp = Math.max(save.totalXp, portalTotalXp ?? 0);
+  const scholarLevel = Math.max(1, Math.floor(effectiveXp / 300) + 1);
 
   return (
     <div className="fixed inset-0 z-20 flex flex-col justify-between gap-2 p-3 sm:p-5 overflow-y-auto overscroll-contain">
@@ -112,7 +115,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               </span>
               <span aria-hidden="true" className="hidden md:inline text-indigo-400/50">·</span>
               <span className="hidden md:inline font-mono-tabular font-bold text-amber-300">
-                {save.totalXp} XP
+                {effectiveXp.toLocaleString()} XP
               </span>
               <span aria-hidden="true" className="hidden sm:inline text-indigo-400/50">·</span>
               <span className="hidden sm:inline font-mono-tabular font-bold text-sky-300">

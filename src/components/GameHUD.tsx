@@ -119,24 +119,24 @@ export const GameHUD: React.FC<GameHUDProps> = ({
     Boolean(hud.coachmark) && coachmarkDismissedWave !== hud.wave && hud.mode === 'tutorial';
 
   return (
-    <div className="fixed inset-0 z-10 flex flex-col justify-between p-1.5 sm:p-3 pointer-events-none">
+    <div className="fixed inset-0 z-10 flex flex-col justify-between p-1.5 lg:p-3 pointer-events-none">
       {/* Top Perimeter Corner Clusters (<= 15% height, central playfield unobstructed) */}
-      <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+      <div className="flex items-start justify-between gap-1 sm:gap-2">
         {/* Top-Left: O.A.I. Brand, Vitality & Run Counters */}
-        <div className="pointer-events-auto flex flex-col gap-0.5 sm:gap-1 rounded-xl border border-indigo-500/35 bg-[#110C28]/95 px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-white shadow-lg">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden md:flex pr-3 border-r border-indigo-500/30">
+        <div className="pointer-events-auto flex flex-col gap-0.5 rounded-xl border border-indigo-500/35 bg-[#110C28]/95 px-2 sm:px-3 py-1 text-white shadow-lg min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
+            <div className="hidden lg:flex pr-2.5 border-r border-indigo-500/30">
               <OaiBrandLogo compact />
             </div>
             <div>
-              <div className="hidden sm:block text-[10px] font-bold uppercase tracking-wider text-amber-300">
+              <div className="hidden lg:block text-[10px] font-bold uppercase tracking-wider text-amber-300">
                 Hull HP
               </div>
               <div className="font-mono-tabular text-xs sm:text-sm font-extrabold leading-tight">
                 {hud.playerHp}/{hud.playerMaxHp}
               </div>
             </div>
-            <div className="h-2.5 sm:h-3 w-16 sm:w-28 overflow-hidden rounded-full border border-indigo-500/40 bg-[#1E1642]">
+            <div className="h-2.5 sm:h-3 w-14 sm:w-20 lg:w-28 overflow-hidden rounded-full border border-indigo-500/40 bg-[#1E1642]">
               <div
                 className={`h-full transition-transform duration-150 origin-left ${
                   hpPct > 50 ? 'bg-emerald-400' : hpPct > 25 ? 'bg-amber-400' : 'bg-rose-500'
@@ -144,10 +144,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 style={{ transform: `scaleX(${hpPct / 100})` }}
               />
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold text-indigo-200 tabular-nums">
+            <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-[11px] font-bold text-indigo-200 tabular-nums">
               <span className="whitespace-nowrap">
                 {hud.maxWaves ? `Stg ${hud.wave}/${hud.maxWaves}` : `W${hud.wave}`}
-                <span className="hidden lg:inline"> · {hud.stageTitle.replace(/^Stage \d+ · /, '')}</span>
+                <span className="hidden xl:inline"> · {hud.stageTitle.replace(/^Stage \d+ · /, '')}</span>
               </span>
               <span aria-hidden="true">·</span>
               <span className="whitespace-nowrap text-amber-300">{hud.score}</span>
@@ -157,8 +157,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           </div>
         </div>
 
-        {/* Top-Center: Wind Gauge & Turn State */}
-        <div className="pointer-events-auto hidden md:flex flex-col items-center rounded-xl border border-indigo-500/35 bg-[#110C28]/95 px-3 py-1 text-white shadow-lg">
+        {/* Top-Center: Wind Gauge & Turn State (desktop only; keeps top-center clear on mobile/tablet) */}
+        <div className="pointer-events-auto hidden lg:flex flex-col items-center rounded-xl border border-indigo-500/35 bg-[#110C28]/95 px-3 py-1 text-white shadow-lg">
           <div className="flex items-center gap-2 text-[11px] font-extrabold">
             <Wind className="h-3.5 w-3.5 text-sky-400" />
             <span className="tabular-nums whitespace-nowrap">
@@ -179,8 +179,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         </div>
 
         {/* Top-Right: Utility Controls */}
-        <div className="pointer-events-auto flex items-center gap-1">
-          <div className="flex md:hidden items-center gap-1 rounded-lg border border-indigo-500/35 bg-[#110C28]/95 px-2 py-1.5 text-[10px] font-extrabold text-white shadow-lg whitespace-nowrap">
+        <div className="pointer-events-auto flex items-center gap-1 shrink-0">
+          <div className="flex lg:hidden items-center gap-1 rounded-lg border border-indigo-500/35 bg-[#110C28]/95 px-2 py-1.5 text-[10px] font-extrabold text-white shadow-lg whitespace-nowrap">
             <Wind className="h-3 w-3 text-sky-400" />
             <span className="tabular-nums">
               {windDir === 'CALM' ? '0' : windDir === 'LEFT' ? `◄${windMph}` : `${windMph}►`}
@@ -195,7 +195,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               onCycleQuality();
             }}
             aria-label={`Graphics mode: ${QUALITY_PRESETS[qualityTier].label}`}
-            className="hidden sm:flex min-h-[34px] sm:min-h-[38px] items-center gap-1 rounded-lg border border-indigo-500/35 bg-[#1E1642] px-2.5 text-[11px] font-bold text-indigo-100 shadow-lg hover:border-amber-400 whitespace-nowrap"
+            className="hidden lg:flex min-h-[38px] items-center gap-1 rounded-lg border border-indigo-500/35 bg-[#1E1642] px-2.5 text-[11px] font-bold text-indigo-100 shadow-lg hover:border-amber-400 whitespace-nowrap"
           >
             <Cpu className="h-3.5 w-3.5 text-sky-400" />
             <span>{qualityTier.toUpperCase()}</span>
@@ -209,7 +209,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               onToggleSound();
             }}
             aria-label={soundEnabled ? 'Mute sound [M]' : 'Unmute sound [M]'}
-            className="flex h-[34px] w-[34px] sm:h-[38px] sm:w-[38px] items-center justify-center rounded-lg border border-indigo-500/35 bg-[#1E1642] text-white shadow-lg hover:border-amber-400"
+            className="flex h-[32px] w-[32px] lg:h-[38px] lg:w-[38px] items-center justify-center rounded-lg border border-indigo-500/35 bg-[#1E1642] text-white shadow-lg hover:border-amber-400"
           >
             {soundEnabled ? (
               <Volume2 className="h-4 w-4 text-emerald-400" />
@@ -226,7 +226,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               onPause();
             }}
             aria-label="Pause game [P]"
-            className="flex h-[34px] w-[34px] sm:h-[38px] sm:w-[38px] items-center justify-center rounded-lg bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 text-slate-950 shadow-lg hover:brightness-105"
+            className="flex h-[32px] w-[32px] lg:h-[38px] lg:w-[38px] items-center justify-center rounded-lg bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 text-slate-950 shadow-lg hover:brightness-105"
           >
             <Pause className="h-4 w-4 fill-slate-950" />
           </button>
@@ -292,27 +292,27 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         </button>
 
         {!consoleCollapsed && (
-          <div className="w-full rounded-2xl border border-indigo-500/35 bg-[#140F2D]/95 p-1.5 sm:p-2.5 text-white shadow-xl">
-            <div className="flex flex-col md:flex-row md:items-center gap-1.5 sm:gap-2.5">
+          <div className="w-full rounded-2xl border border-indigo-500/35 bg-[#140F2D]/95 p-1.5 lg:p-2.5 text-white shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
               {/* Aim & Weapon Controls */}
-              <div className="flex flex-col gap-1 sm:gap-1.5 md:w-[44%]">
-                <div className="grid grid-cols-2 gap-1.5">
+              <div className="flex flex-col gap-1 sm:w-[44%]">
+                <div className="grid grid-cols-2 gap-1">
                   {/* Angle Stepper */}
-                  <div className="flex items-center justify-between rounded-lg border border-indigo-500/30 bg-[#191238] p-0.5 sm:p-1">
+                  <div className="flex items-center justify-between rounded-lg border border-indigo-500/30 bg-[#191238] p-0.5">
                     <button
                       type="button"
                       disabled={!isPlayerReady}
                       onClick={() => onAdjustAngle(-3)}
                       aria-label="Decrease aim angle"
-                      className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
+                      className="flex h-7 w-7 lg:h-10 lg:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
                     >
-                      <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <ChevronLeft className="h-4 w-4 lg:h-5 lg:w-5" />
                     </button>
                     <div className="text-center">
-                      <div className="text-[9px] sm:text-[10px] font-bold uppercase text-indigo-300 leading-none">
+                      <div className="text-[9px] lg:text-[10px] font-bold uppercase text-indigo-300 leading-none">
                         Angle
                       </div>
-                      <div className="font-mono-tabular text-xs sm:text-sm font-extrabold text-sky-300 leading-tight">
+                      <div className="font-mono-tabular text-xs lg:text-sm font-extrabold text-sky-300 leading-tight">
                         {hud.angleDeg}°
                       </div>
                     </div>
@@ -321,28 +321,28 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                       disabled={!isPlayerReady}
                       onClick={() => onAdjustAngle(3)}
                       aria-label="Increase aim angle"
-                      className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
+                      className="flex h-7 w-7 lg:h-10 lg:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
                     >
-                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <ChevronRight className="h-4 w-4 lg:h-5 lg:w-5" />
                     </button>
                   </div>
 
                   {/* Power Stepper */}
-                  <div className="flex items-center justify-between rounded-lg border border-indigo-500/30 bg-[#191238] p-0.5 sm:p-1">
+                  <div className="flex items-center justify-between rounded-lg border border-indigo-500/30 bg-[#191238] p-0.5">
                     <button
                       type="button"
                       disabled={!isPlayerReady}
                       onClick={() => onAdjustPower(-5)}
                       aria-label="Decrease shot power"
-                      className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
+                      className="flex h-7 w-7 lg:h-10 lg:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
                     >
-                      <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <Minus className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
                     </button>
                     <div className="text-center">
-                      <div className="text-[9px] sm:text-[10px] font-bold uppercase text-indigo-300 leading-none">
+                      <div className="text-[9px] lg:text-[10px] font-bold uppercase text-indigo-300 leading-none">
                         Power
                       </div>
-                      <div className="font-mono-tabular text-xs sm:text-sm font-extrabold text-amber-300 leading-tight">
+                      <div className="font-mono-tabular text-xs lg:text-sm font-extrabold text-amber-300 leading-tight">
                         {hud.power}%
                       </div>
                     </div>
@@ -351,9 +351,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                       disabled={!isPlayerReady}
                       onClick={() => onAdjustPower(5)}
                       aria-label="Increase shot power"
-                      className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
+                      className="flex h-7 w-7 lg:h-10 lg:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
                     >
-                      <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <Plus className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
                     </button>
                   </div>
                 </div>
@@ -375,7 +375,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                             ? `${w.name} (${w.shortRole})`
                             : `Unlock with ${w.unlockStreak}-streak or Upgrade Shop`
                         }
-                        className={`min-h-[34px] sm:min-h-[40px] rounded-lg border px-1.5 py-0.5 text-left transition-colors ${
+                        className={`min-h-[30px] lg:min-h-[40px] rounded-lg border px-1.5 py-0.5 text-left transition-colors ${
                           selected
                             ? 'border-amber-400 bg-[#231A4D] text-amber-200 shadow-xs'
                             : unlocked
@@ -383,10 +383,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                               : 'border-indigo-500/15 bg-[#0E0A22]/60 text-indigo-400/60 opacity-60'
                         }`}
                       >
-                        <div className="truncate text-[10px] sm:text-[11px] font-extrabold leading-tight">
+                        <div className="truncate text-[10px] lg:text-[11px] font-extrabold leading-tight">
                           {w.name}
                         </div>
-                        <div className="truncate text-[9px] sm:text-[10px] font-medium text-indigo-300 leading-tight">
+                        <div className="truncate text-[9px] lg:text-[10px] font-medium text-indigo-300 leading-tight">
                           {unlocked ? w.shortRole : `${w.unlockStreak}-Streak`}
                         </div>
                       </button>
@@ -396,15 +396,15 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               </div>
 
               {/* Solve Equation to Fire Panel */}
-              <div className="flex-1 border-t md:border-t-0 md:border-l border-indigo-500/25 pt-1.5 md:pt-0 md:pl-2.5">
+              <div className="flex-1 border-t sm:border-t-0 sm:border-l border-indigo-500/25 pt-1 sm:pt-0 sm:pl-2">
                 {isPlayerReady ? (
-                  <div className="flex flex-col gap-1 sm:gap-1.5">
+                  <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2">
-                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-300">
+                      <div className="flex flex-wrap items-baseline gap-1.5">
+                        <span className="text-[10px] lg:text-[11px] font-bold uppercase tracking-wider text-amber-300">
                           Tier {question.tier} · {question.topic}
                         </span>
-                        <span className="font-mono-tabular text-sm sm:text-lg font-extrabold text-white">
+                        <span className="font-mono-tabular text-sm lg:text-lg font-extrabold text-white">
                           {question.prompt}
                         </span>
                       </div>
@@ -412,9 +412,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                         type="button"
                         onClick={handleToggleHint}
                         aria-label="Toggle equation hint"
-                        className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-indigo-500/30 bg-[#1E1642] text-indigo-200 hover:border-amber-400 hover:text-white"
+                        className="flex h-6 w-6 lg:h-8 lg:w-8 shrink-0 items-center justify-center rounded-lg border border-indigo-500/30 bg-[#1E1642] text-indigo-200 hover:border-amber-400 hover:text-white"
                       >
-                        <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <HelpCircle className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
                       </button>
                     </div>
 
@@ -427,7 +427,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                       </p>
                     )}
 
-                    <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+                    <div className="grid grid-cols-4 gap-1.5">
                       {question.choices.map((choice, idx) => (
                         <button
                           key={`${question.id}_${idx}`}
@@ -437,9 +437,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                             setShowHint(false);
                             onAnswerChoice(choice);
                           }}
-                          className="flex min-h-[36px] sm:min-h-[44px] items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 px-1.5 py-1 sm:px-2 sm:py-2 font-mono-tabular text-sm sm:text-base font-extrabold text-slate-950 shadow-sm transition-all hover:from-amber-300 hover:to-orange-300 active:translate-y-0.5"
+                          className="flex min-h-[34px] lg:min-h-[44px] items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 px-1.5 py-1 lg:px-2 lg:py-2 font-mono-tabular text-sm lg:text-base font-extrabold text-slate-950 shadow-sm transition-all hover:from-amber-300 hover:to-orange-300 active:translate-y-0.5"
                         >
-                          <kbd className="hidden sm:inline rounded bg-slate-950/15 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-950">
+                          <kbd className="hidden lg:inline rounded bg-slate-950/15 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-950">
                             {idx + 1}
                           </kbd>
                           <span>{choice}</span>
@@ -448,8 +448,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex min-h-[54px] sm:min-h-[70px] items-center justify-center rounded-xl bg-slate-800/80 px-3 text-center">
-                    <p className="font-display text-sm sm:text-base font-bold text-amber-300">
+                  <div className="flex min-h-[50px] lg:min-h-[70px] items-center justify-center rounded-xl bg-slate-800/80 px-3 text-center">
+                    <p className="font-display text-xs sm:text-sm lg:text-base font-bold text-amber-300">
                       {hud.turnPhase === 'firing'
                         ? 'Artillery shell in flight...'
                         : `${hud.activeEnemyName ?? 'Enemy tank'} is locking coordinates...`}

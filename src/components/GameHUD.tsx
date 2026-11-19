@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Cpu,
   HelpCircle,
   Minus,
@@ -78,6 +80,14 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   const [showHint, setShowHint] = useState(false);
   const [aiHint, setAiHint] = useState<{ qId: string; text: string } | null>(null);
   const [coachmarkDismissedWave, setCoachmarkDismissedWave] = useState<number | null>(null);
+  const [consoleCollapsed, setConsoleCollapsed] = useState(false);
+
+  // Auto-expand fire console when player's turn begins so equation is ready
+  useEffect(() => {
+    if (hud.turnPhase === 'player_aim') {
+      setConsoleCollapsed(false);
+    }
+  }, [hud.turnPhase, question.id]);
 
   const handleToggleHint = () => {
     const next = !showHint;
@@ -109,24 +119,24 @@ export const GameHUD: React.FC<GameHUDProps> = ({
     Boolean(hud.coachmark) && coachmarkDismissedWave !== hud.wave && hud.mode === 'tutorial';
 
   return (
-    <div className="fixed inset-0 z-10 flex flex-col justify-between p-2.5 sm:p-4 pointer-events-none">
+    <div className="fixed inset-0 z-10 flex flex-col justify-between p-1.5 sm:p-3 pointer-events-none">
       {/* Top Perimeter Corner Clusters (<= 15% height, central playfield unobstructed) */}
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-1.5 sm:gap-2">
         {/* Top-Left: O.A.I. Brand, Vitality & Run Counters */}
-        <div className="pointer-events-auto flex flex-col gap-1.5 rounded-xl border border-indigo-500/35 bg-[#110C28]/95 px-3.5 py-2 text-white shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex pr-3 border-r border-indigo-500/30">
+        <div className="pointer-events-auto flex flex-col gap-0.5 sm:gap-1 rounded-xl border border-indigo-500/35 bg-[#110C28]/95 px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-white shadow-lg">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden md:flex pr-3 border-r border-indigo-500/30">
               <OaiBrandLogo compact />
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+              <div className="hidden sm:block text-[10px] font-bold uppercase tracking-wider text-amber-300">
                 Hull HP
               </div>
-              <div className="font-mono-tabular text-sm sm:text-base font-extrabold leading-tight">
+              <div className="font-mono-tabular text-xs sm:text-sm font-extrabold leading-tight">
                 {hud.playerHp}/{hud.playerMaxHp}
               </div>
             </div>
-            <div className="h-3 w-20 sm:w-28 overflow-hidden rounded-full border border-indigo-500/40 bg-[#1E1642]">
+            <div className="h-2.5 sm:h-3 w-16 sm:w-28 overflow-hidden rounded-full border border-indigo-500/40 bg-[#1E1642]">
               <div
                 className={`h-full transition-transform duration-150 origin-left ${
                   hpPct > 50 ? 'bg-emerald-400' : hpPct > 25 ? 'bg-amber-400' : 'bg-rose-500'
@@ -134,23 +144,23 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 style={{ transform: `scaleX(${hpPct / 100})` }}
               />
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] font-bold text-indigo-200 tabular-nums">
-            <span className="whitespace-nowrap">
-              {hud.maxWaves ? `Stage ${hud.wave}/${hud.maxWaves}` : `Wave ${hud.wave}`}
-              <span className="hidden sm:inline"> · {hud.stageTitle.replace(/^Stage \d+ · /, '')}</span>
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="whitespace-nowrap text-amber-300">Score {hud.score}</span>
-            <span aria-hidden="true">·</span>
-            <span className="whitespace-nowrap text-emerald-400">Streak {hud.streak}</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold text-indigo-200 tabular-nums">
+              <span className="whitespace-nowrap">
+                {hud.maxWaves ? `Stg ${hud.wave}/${hud.maxWaves}` : `W${hud.wave}`}
+                <span className="hidden lg:inline"> · {hud.stageTitle.replace(/^Stage \d+ · /, '')}</span>
+              </span>
+              <span aria-hidden="true">·</span>
+              <span className="whitespace-nowrap text-amber-300">{hud.score}</span>
+              <span className="hidden sm:inline" aria-hidden="true">·</span>
+              <span className="hidden sm:inline whitespace-nowrap text-emerald-400">Streak {hud.streak}</span>
+            </div>
           </div>
         </div>
 
         {/* Top-Center: Wind Gauge & Turn State */}
-        <div className="pointer-events-auto hidden md:flex flex-col items-center rounded-xl border border-indigo-500/35 bg-[#110C28]/95 px-4 py-1.5 text-white shadow-lg">
-          <div className="flex items-center gap-2 text-xs font-extrabold">
-            <Wind className="h-4 w-4 text-sky-400" />
+        <div className="pointer-events-auto hidden md:flex flex-col items-center rounded-xl border border-indigo-500/35 bg-[#110C28]/95 px-3 py-1 text-white shadow-lg">
+          <div className="flex items-center gap-2 text-[11px] font-extrabold">
+            <Wind className="h-3.5 w-3.5 text-sky-400" />
             <span className="tabular-nums whitespace-nowrap">
               {windDir === 'CALM'
                 ? 'WIND CALM'
@@ -159,7 +169,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   : `WIND ${windMph} MPH ►`}
             </span>
           </div>
-          <div className="text-[11px] font-bold text-amber-300 whitespace-nowrap">
+          <div className="text-[10px] font-bold text-amber-300 whitespace-nowrap">
             {hud.turnPhase === 'player_aim'
               ? `YOUR TURN · ${hud.enemiesRemaining} ENEMY LEFT`
               : hud.turnPhase === 'firing'
@@ -169,9 +179,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         </div>
 
         {/* Top-Right: Utility Controls */}
-        <div className="pointer-events-auto flex items-center gap-1.5">
-          <div className="flex md:hidden items-center gap-1 rounded-xl border border-indigo-500/35 bg-[#110C28]/95 px-2.5 py-2 text-[11px] font-extrabold text-white shadow-lg whitespace-nowrap">
-            <Wind className="h-3.5 w-3.5 text-sky-400" />
+        <div className="pointer-events-auto flex items-center gap-1">
+          <div className="flex md:hidden items-center gap-1 rounded-lg border border-indigo-500/35 bg-[#110C28]/95 px-2 py-1.5 text-[10px] font-extrabold text-white shadow-lg whitespace-nowrap">
+            <Wind className="h-3 w-3 text-sky-400" />
             <span className="tabular-nums">
               {windDir === 'CALM' ? '0' : windDir === 'LEFT' ? `◄${windMph}` : `${windMph}►`}
             </span>
@@ -185,9 +195,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               onCycleQuality();
             }}
             aria-label={`Graphics mode: ${QUALITY_PRESETS[qualityTier].label}`}
-            className="hidden sm:flex min-h-[44px] items-center gap-1.5 rounded-xl border border-indigo-500/35 bg-[#1E1642] px-3 text-xs font-bold text-indigo-100 shadow-lg hover:border-amber-400 whitespace-nowrap"
+            className="hidden sm:flex min-h-[34px] sm:min-h-[38px] items-center gap-1 rounded-lg border border-indigo-500/35 bg-[#1E1642] px-2.5 text-[11px] font-bold text-indigo-100 shadow-lg hover:border-amber-400 whitespace-nowrap"
           >
-            <Cpu className="h-4 w-4 text-sky-400" />
+            <Cpu className="h-3.5 w-3.5 text-sky-400" />
             <span>{qualityTier.toUpperCase()}</span>
           </button>
 
@@ -199,12 +209,12 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               onToggleSound();
             }}
             aria-label={soundEnabled ? 'Mute sound [M]' : 'Unmute sound [M]'}
-            className="flex h-[44px] w-[44px] items-center justify-center rounded-xl border border-indigo-500/35 bg-[#1E1642] text-white shadow-lg hover:border-amber-400"
+            className="flex h-[34px] w-[34px] sm:h-[38px] sm:w-[38px] items-center justify-center rounded-lg border border-indigo-500/35 bg-[#1E1642] text-white shadow-lg hover:border-amber-400"
           >
             {soundEnabled ? (
-              <Volume2 className="h-5 w-5 text-emerald-400" />
+              <Volume2 className="h-4 w-4 text-emerald-400" />
             ) : (
-              <VolumeX className="h-5 w-5 text-indigo-400" />
+              <VolumeX className="h-4 w-4 text-indigo-400" />
             )}
           </button>
 
@@ -216,25 +226,25 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               onPause();
             }}
             aria-label="Pause game [P]"
-            className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 text-slate-950 shadow-lg hover:brightness-105"
+            className="flex h-[34px] w-[34px] sm:h-[38px] sm:w-[38px] items-center justify-center rounded-lg bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 text-slate-950 shadow-lg hover:brightness-105"
           >
-            <Pause className="h-5 w-5 fill-slate-950" />
+            <Pause className="h-4 w-4 fill-slate-950" />
           </button>
         </div>
       </div>
 
-      {/* Non-Blocking Tutorial Coachmark (top-left, clear of central trajectory) */}
+      {/* Slim Dismissible Tutorial Coachmark (keeps central trajectory unobstructed) */}
       {showCoachmark && (
-        <div className="pointer-events-auto mt-2 max-w-md self-start rounded-xl border-2 border-slate-950 bg-amber-300 px-3.5 py-2 text-slate-950 shadow-[0_3px_0_#0f172a]">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-xs sm:text-sm font-bold leading-snug">{hud.coachmark}</p>
+        <div className="pointer-events-auto mt-1 max-w-sm self-start rounded-lg border border-slate-950 bg-amber-300/95 px-2.5 py-1 text-slate-950 shadow-md">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-bold leading-tight truncate">{hud.coachmark}</p>
             <button
               type="button"
               aria-label="Dismiss stage tip"
               onClick={() => setCoachmarkDismissedWave(hud.wave)}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-950/15 hover:bg-slate-950/25"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-slate-950/15 hover:bg-slate-950/25"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
@@ -245,10 +255,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
       {/* Feedback Banner above Fire Console */}
       {hud.lastFeedback && (
-        <div className="mb-2 self-center pointer-events-none">
+        <div className="mb-1 self-center pointer-events-none">
           <div
             role="status"
-            className={`rounded-xl border-2 border-slate-950 px-4 py-1.5 text-xs sm:text-sm font-extrabold shadow-[0_3px_0_#0f172a] ${
+            className={`rounded-lg border-2 border-slate-950 px-3 py-1 text-xs font-extrabold shadow-[0_3px_0_#0f172a] ${
               hud.lastFeedback.ok
                 ? 'bg-emerald-400 text-slate-950'
                 : 'bg-rose-500 text-white'
@@ -259,169 +269,197 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         </div>
       )}
 
-      {/* Bottom-Docked Touch-Friendly Aim & Equation Fire Console */}
-      <div className="pointer-events-auto mx-auto w-full max-w-5xl rounded-2xl border border-indigo-500/35 bg-[#140F2D]/95 p-2.5 sm:p-3.5 text-white shadow-xl">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-2.5 sm:gap-3">
-          {/* Aim & Weapon Controls */}
-          <div className="flex flex-col gap-2 lg:w-[44%]">
-            <div className="grid grid-cols-2 gap-2">
-              {/* Angle Stepper */}
-              <div className="flex items-center justify-between rounded-xl border border-indigo-500/30 bg-[#191238] p-1">
-                <button
-                  type="button"
-                  disabled={!isPlayerReady}
-                  onClick={() => onAdjustAngle(-3)}
-                  aria-label="Decrease aim angle"
-                  className="flex h-11 w-10 sm:w-11 items-center justify-center rounded-lg bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <div className="text-center">
-                  <div className="text-[10px] font-bold uppercase text-indigo-300">Angle</div>
-                  <div className="font-mono-tabular text-sm font-extrabold text-sky-300">
-                    {hud.angleDeg}°
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  disabled={!isPlayerReady}
-                  onClick={() => onAdjustAngle(3)}
-                  aria-label="Increase aim angle"
-                  className="flex h-11 w-10 sm:w-11 items-center justify-center rounded-lg bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
+      {/* Bottom-Docked Collapsible Touch-Friendly Aim & Equation Fire Console */}
+      <div className="pointer-events-auto mx-auto w-full max-w-5xl flex flex-col items-center">
+        <button
+          type="button"
+          onClick={() => setConsoleCollapsed((prev) => !prev)}
+          aria-expanded={!consoleCollapsed}
+          aria-label={consoleCollapsed ? 'Expand Aim & Equation Console' : 'Minimize Aim & Equation Console'}
+          className="inline-flex items-center gap-1 rounded-t-lg border border-b-0 border-indigo-500/35 bg-[#140F2D]/95 px-3 py-0.5 text-[10px] font-bold text-indigo-200 hover:text-amber-300"
+        >
+          {consoleCollapsed ? (
+            <>
+              <ChevronUp className="h-3 w-3" />
+              <span>Aim &amp; Equation Console ({question.prompt})</span>
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3 w-3" />
+              <span>Minimize Console</span>
+            </>
+          )}
+        </button>
 
-              {/* Power Stepper */}
-              <div className="flex items-center justify-between rounded-xl border border-indigo-500/30 bg-[#191238] p-1">
-                <button
-                  type="button"
-                  disabled={!isPlayerReady}
-                  onClick={() => onAdjustPower(-5)}
-                  aria-label="Decrease shot power"
-                  className="flex h-11 w-10 sm:w-11 items-center justify-center rounded-lg bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <div className="text-center">
-                  <div className="text-[10px] font-bold uppercase text-indigo-300">Power</div>
-                  <div className="font-mono-tabular text-sm font-extrabold text-amber-300">
-                    {hud.power}%
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  disabled={!isPlayerReady}
-                  onClick={() => onAdjustPower(5)}
-                  aria-label="Increase shot power"
-                  className="flex h-11 w-10 sm:w-11 items-center justify-center rounded-lg bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Weapon Selector (3 clean equal columns, never clipped) */}
-            <div className="grid grid-cols-3 gap-1.5">
-              {(['standard', 'cluster', 'mortar'] as WeaponId[]).map((wId) => {
-                const w = getEffectiveWeaponSpec(wId, weaponUpgrades);
-                const unlocked = hud.unlockedWeapons.includes(wId);
-                const selected = hud.selectedWeapon === wId;
-                return (
-                  <button
-                    key={wId}
-                    type="button"
-                    disabled={!unlocked || !isPlayerReady}
-                    onClick={() => onSelectWeapon(wId)}
-                    title={
-                      unlocked
-                        ? `${w.name} (${w.shortRole})`
-                        : `Unlock with ${w.unlockStreak}-streak or Upgrade Shop`
-                    }
-                    className={`min-h-[44px] rounded-xl border px-2 py-1 text-left transition-colors ${
-                      selected
-                        ? 'border-amber-400 bg-[#231A4D] text-amber-200 shadow-xs'
-                        : unlocked
-                          ? 'border-indigo-500/30 bg-[#191238] text-indigo-100 hover:bg-[#231A4D]'
-                          : 'border-indigo-500/15 bg-[#0E0A22]/60 text-indigo-400/60 opacity-60'
-                    }`}
-                  >
-                    <div className="truncate text-[11px] font-extrabold leading-tight">
-                      {w.name}
-                    </div>
-                    <div className="truncate text-[10px] font-medium text-indigo-300 leading-tight">
-                      {unlocked ? w.shortRole : `${w.unlockStreak}-Streak`}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Solve Equation to Fire Panel */}
-          <div className="flex-1 border-t lg:border-t-0 lg:border-l border-indigo-500/25 pt-2 lg:pt-0 lg:pl-3">
-            {isPlayerReady ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-baseline gap-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
-                      Tier {question.tier} · {question.topic}
-                    </span>
-                    <span className="font-mono-tabular text-lg sm:text-xl font-extrabold text-white">
-                      {question.prompt}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleToggleHint}
-                    aria-label="Toggle equation hint"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-indigo-500/30 bg-[#1E1642] text-indigo-200 hover:border-amber-400 hover:text-white"
-                  >
-                    <HelpCircle className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {showHint && (
-                  <p className="text-xs font-medium text-amber-200">
-                    {question.hint}
-                    {aiHint?.qId === question.id && (
-                      <span className="ml-2 text-cyan-300">· 💡 {aiHint.text}</span>
-                    )}
-                  </p>
-                )}
-
-                <div className="grid grid-cols-4 gap-2">
-                  {question.choices.map((choice, idx) => (
+        {!consoleCollapsed && (
+          <div className="w-full rounded-2xl border border-indigo-500/35 bg-[#140F2D]/95 p-1.5 sm:p-2.5 text-white shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center gap-1.5 sm:gap-2.5">
+              {/* Aim & Weapon Controls */}
+              <div className="flex flex-col gap-1 sm:gap-1.5 md:w-[44%]">
+                <div className="grid grid-cols-2 gap-1.5">
+                  {/* Angle Stepper */}
+                  <div className="flex items-center justify-between rounded-lg border border-indigo-500/30 bg-[#191238] p-0.5 sm:p-1">
                     <button
-                      key={`${question.id}_${idx}`}
                       type="button"
-                      data-answer-index={idx}
-                      onClick={() => {
-                        setShowHint(false);
-                        onAnswerChoice(choice);
-                      }}
-                      className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 px-2 py-2 font-mono-tabular text-base sm:text-lg font-extrabold text-slate-950 shadow-sm transition-all hover:from-amber-300 hover:to-orange-300 active:translate-y-0.5"
+                      disabled={!isPlayerReady}
+                      onClick={() => onAdjustAngle(-3)}
+                      aria-label="Decrease aim angle"
+                      className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
                     >
-                      <kbd className="hidden sm:inline rounded bg-slate-950/15 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-950">
-                        {idx + 1}
-                      </kbd>
-                      <span>{choice}</span>
+                      <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                     </button>
-                  ))}
+                    <div className="text-center">
+                      <div className="text-[9px] sm:text-[10px] font-bold uppercase text-indigo-300 leading-none">
+                        Angle
+                      </div>
+                      <div className="font-mono-tabular text-xs sm:text-sm font-extrabold text-sky-300 leading-tight">
+                        {hud.angleDeg}°
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!isPlayerReady}
+                      onClick={() => onAdjustAngle(3)}
+                      aria-label="Increase aim angle"
+                      className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
+                    >
+                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </button>
+                  </div>
+
+                  {/* Power Stepper */}
+                  <div className="flex items-center justify-between rounded-lg border border-indigo-500/30 bg-[#191238] p-0.5 sm:p-1">
+                    <button
+                      type="button"
+                      disabled={!isPlayerReady}
+                      onClick={() => onAdjustPower(-5)}
+                      aria-label="Decrease shot power"
+                      className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
+                    >
+                      <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </button>
+                    <div className="text-center">
+                      <div className="text-[9px] sm:text-[10px] font-bold uppercase text-indigo-300 leading-none">
+                        Power
+                      </div>
+                      <div className="font-mono-tabular text-xs sm:text-sm font-extrabold text-amber-300 leading-tight">
+                        {hud.power}%
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!isPlayerReady}
+                      onClick={() => onAdjustPower(5)}
+                      aria-label="Increase shot power"
+                      className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-md bg-[#231A4D] text-white hover:bg-[#2E2363] disabled:opacity-40"
+                    >
+                      <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Weapon Selector (3 clean equal columns, never clipped) */}
+                <div className="grid grid-cols-3 gap-1">
+                  {(['standard', 'cluster', 'mortar'] as WeaponId[]).map((wId) => {
+                    const w = getEffectiveWeaponSpec(wId, weaponUpgrades);
+                    const unlocked = hud.unlockedWeapons.includes(wId);
+                    const selected = hud.selectedWeapon === wId;
+                    return (
+                      <button
+                        key={wId}
+                        type="button"
+                        disabled={!unlocked || !isPlayerReady}
+                        onClick={() => onSelectWeapon(wId)}
+                        title={
+                          unlocked
+                            ? `${w.name} (${w.shortRole})`
+                            : `Unlock with ${w.unlockStreak}-streak or Upgrade Shop`
+                        }
+                        className={`min-h-[34px] sm:min-h-[40px] rounded-lg border px-1.5 py-0.5 text-left transition-colors ${
+                          selected
+                            ? 'border-amber-400 bg-[#231A4D] text-amber-200 shadow-xs'
+                            : unlocked
+                              ? 'border-indigo-500/30 bg-[#191238] text-indigo-100 hover:bg-[#231A4D]'
+                              : 'border-indigo-500/15 bg-[#0E0A22]/60 text-indigo-400/60 opacity-60'
+                        }`}
+                      >
+                        <div className="truncate text-[10px] sm:text-[11px] font-extrabold leading-tight">
+                          {w.name}
+                        </div>
+                        <div className="truncate text-[9px] sm:text-[10px] font-medium text-indigo-300 leading-tight">
+                          {unlocked ? w.shortRole : `${w.unlockStreak}-Streak`}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            ) : (
-              <div className="flex min-h-[76px] items-center justify-center rounded-xl bg-slate-800/80 px-4 text-center">
-                <p className="font-display text-base sm:text-lg font-bold text-amber-300">
-                  {hud.turnPhase === 'firing'
-                    ? 'Artillery shell in flight...'
-                    : `${hud.activeEnemyName ?? 'Enemy tank'} is locking coordinates...`}
-                </p>
+
+              {/* Solve Equation to Fire Panel */}
+              <div className="flex-1 border-t md:border-t-0 md:border-l border-indigo-500/25 pt-1.5 md:pt-0 md:pl-2.5">
+                {isPlayerReady ? (
+                  <div className="flex flex-col gap-1 sm:gap-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2">
+                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-300">
+                          Tier {question.tier} · {question.topic}
+                        </span>
+                        <span className="font-mono-tabular text-sm sm:text-lg font-extrabold text-white">
+                          {question.prompt}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleToggleHint}
+                        aria-label="Toggle equation hint"
+                        className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-indigo-500/30 bg-[#1E1642] text-indigo-200 hover:border-amber-400 hover:text-white"
+                      >
+                        <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      </button>
+                    </div>
+
+                    {showHint && (
+                      <p className="text-[11px] font-medium text-amber-200">
+                        {question.hint}
+                        {aiHint?.qId === question.id && (
+                          <span className="ml-2 text-cyan-300">· 💡 {aiHint.text}</span>
+                        )}
+                      </p>
+                    )}
+
+                    <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+                      {question.choices.map((choice, idx) => (
+                        <button
+                          key={`${question.id}_${idx}`}
+                          type="button"
+                          data-answer-index={idx}
+                          onClick={() => {
+                            setShowHint(false);
+                            onAnswerChoice(choice);
+                          }}
+                          className="flex min-h-[36px] sm:min-h-[44px] items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 px-1.5 py-1 sm:px-2 sm:py-2 font-mono-tabular text-sm sm:text-base font-extrabold text-slate-950 shadow-sm transition-all hover:from-amber-300 hover:to-orange-300 active:translate-y-0.5"
+                        >
+                          <kbd className="hidden sm:inline rounded bg-slate-950/15 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-950">
+                            {idx + 1}
+                          </kbd>
+                          <span>{choice}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex min-h-[54px] sm:min-h-[70px] items-center justify-center rounded-xl bg-slate-800/80 px-3 text-center">
+                    <p className="font-display text-sm sm:text-base font-bold text-amber-300">
+                      {hud.turnPhase === 'firing'
+                        ? 'Artillery shell in flight...'
+                        : `${hud.activeEnemyName ?? 'Enemy tank'} is locking coordinates...`}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

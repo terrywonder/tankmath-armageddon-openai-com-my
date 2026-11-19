@@ -80,9 +80,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   const scholarLevel = Math.max(1, Math.floor(effectiveXp / 300) + 1);
 
   return (
-    <div className="fixed inset-0 z-20 flex flex-col justify-between gap-2 p-3 sm:p-5 overflow-y-auto overscroll-contain">
+    <div className="fixed inset-0 z-20 flex flex-col justify-between gap-1.5 sm:gap-2 p-2 sm:p-4 overflow-y-auto overscroll-contain">
       {/* Top O.A.I. Malaysia Portal Header Bar */}
-      <header className="pointer-events-auto w-full shrink-0 rounded-2xl border border-indigo-500/30 bg-[#110C28]/95 px-3.5 py-2 shadow-lg">
+      <header className="pointer-events-auto w-full shrink-0 rounded-2xl border border-indigo-500/30 bg-[#110C28]/95 px-3 py-1.5 sm:px-3.5 sm:py-2 shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-2.5">
           {/* Left: Enhanced O.A.I. Malaysia Logo + Curriculum Tag */}
           <div className="flex items-center gap-3">
@@ -166,26 +166,26 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       </header>
 
       {/* Main Portal Overview Card (Upper-Left Sky Zone so Both Tanks Stay Visible) */}
-      <div className="mt-2 sm:mt-3 mb-auto max-w-2xl pointer-events-auto">
+      <div className="mt-1 sm:mt-2 mb-auto max-w-2xl pointer-events-auto">
         <div
-          className="relative overflow-hidden rounded-2xl border border-indigo-500/30 bg-[#140F2D]/92 p-3.5 sm:p-5 shadow-xl"
+          className="relative overflow-hidden rounded-2xl border border-indigo-500/30 bg-[#140F2D]/92 p-2.5 sm:p-4 shadow-xl"
           style={{
             backgroundImage:
               'radial-gradient(circle at 88% 14%, rgba(56, 189, 248, 0.16) 0%, rgba(168, 85, 247, 0.12) 40%, rgba(20, 15, 45, 0.95) 85%)',
           }}
         >
           {/* Curriculum Eyebrow */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-bold uppercase tracking-wider text-amber-300">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-300">
             <span>MOE Malaysia Aligned · KSSR · KSSM · SPM</span>
             <span aria-hidden="true">·</span>
             <span className="text-emerald-400">{TIER_LABELS[selectedSkirmishTier]}</span>
           </div>
 
           {/* Custom Vector Tank Emblem & Game Title Lockup */}
-          <div className="mt-1.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3.5">
             <svg
               viewBox="0 0 540 104"
-              className="w-full max-w-[320px] sm:max-w-[340px] shrink-0 drop-shadow-[0_4px_0_rgba(9,7,20,0.95)]"
+              className="w-full max-w-[220px] sm:max-w-[320px] shrink-0 drop-shadow-[0_4px_0_rgba(9,7,20,0.95)]"
               role="img"
               aria-label="TankMath Armageddon"
             >
@@ -253,12 +253,12 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           </div>
 
           {/* Primary Launchpad Actions (3 Primary Game Launch Buttons in 1 Row on sm+) */}
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="mt-2 sm:mt-3 grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2">
             <button
               type="button"
               data-start="true"
               onClick={() => onStartGame('tutorial')}
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 px-3.5 py-2 text-xs sm:text-sm font-extrabold text-slate-950 shadow-sm transition-all hover:from-amber-300 hover:to-orange-300 whitespace-nowrap"
+              className="inline-flex min-h-[38px] sm:min-h-[42px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 px-3 py-1.5 text-xs sm:text-sm font-extrabold text-slate-950 shadow-sm transition-all hover:from-amber-300 hover:to-orange-300 whitespace-nowrap"
             >
               <Play className="h-4 w-4 shrink-0 fill-slate-950" />
               <span>{save.tutorialCompleted ? 'Replay Tutorial' : 'Play Tutorial'}</span>
@@ -274,7 +274,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             <button
               type="button"
               onClick={() => onStartGame('skirmish')}
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-amber-400/80 bg-[#231A4D] px-3.5 py-2 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2C215E] whitespace-nowrap"
+              className="inline-flex min-h-[38px] sm:min-h-[42px] items-center justify-center gap-2 rounded-xl border border-amber-400/80 bg-[#231A4D] px-3 py-1.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2C215E] whitespace-nowrap"
             >
               <Swords className="h-4 w-4 shrink-0 text-sky-400" />
               <span>Skirmish · Tier {selectedSkirmishTier}</span>
@@ -283,7 +283,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             <button
               type="button"
               onClick={() => onStartGame('endless')}
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-indigo-500/35 bg-[#191238] px-3.5 py-2 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:border-amber-400 hover:bg-[#231A4D] whitespace-nowrap"
+              className="inline-flex min-h-[38px] sm:min-h-[42px] items-center justify-center gap-2 rounded-xl border border-indigo-500/35 bg-[#191238] px-3 py-1.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:border-amber-400 hover:bg-[#231A4D] whitespace-nowrap"
             >
               <Zap className="h-4 w-4 shrink-0 text-amber-400" />
               <span>Endless Survival</span>
@@ -291,7 +291,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           </div>
 
           {/* Syllabus Tier Selector + Armory & Leaderboard Strip */}
-          <div className="mt-3 pt-2.5 border-t border-indigo-500/25 flex flex-wrap items-center justify-between gap-2">
+          <div className="mt-2 sm:mt-3 pt-2 border-t border-indigo-500/25 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
             <div
               role="group"
               aria-label="Skirmish starting math tier"

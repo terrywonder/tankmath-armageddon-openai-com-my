@@ -50,6 +50,48 @@ interface BattlefieldCanvasProps {
 
 const MAX_PARTICLES = 80;
 
+function computeBattlefieldTransform(
+  logicalWidth: number,
+  logicalHeight: number,
+  screenState: GameScreenState
+) {
+  const safeW = Math.max(320, logicalWidth);
+  const safeH = Math.max(240, logicalHeight);
+  const scaleX = safeW / WORLD_WIDTH;
+  const scaleY = safeH / WORLD_HEIGHT;
+
+  if (screenState !== 'playing') {
+    const scale = safeW < safeH ? scaleX : Math.max(scaleX, scaleY);
+    return {
+      scale,
+      offsetX: (safeW - WORLD_WIDTH * scale) * 0.5,
+      offsetY:
+        safeW < safeH
+          ? (safeH - WORLD_HEIGHT * scale) * 0.42
+          : (safeH - WORLD_HEIGHT * scale) * 0.5,
+    };
+  }
+
+  const topInset = safeH < 480 ? 44 : 62;
+  const bottomInset =
+    safeH < 480
+      ? Math.min(104, Math.round(safeH * 0.28))
+      : safeW < 768
+        ? Math.min(175, Math.round(safeH * 0.28))
+        : 128;
+  const availHeight = Math.max(120, safeH - topInset - bottomInset);
+  const compactViewport = safeW < 1024 || safeH < 560;
+  const playScaleY = availHeight / (WORLD_HEIGHT * 0.78);
+  const scale = compactViewport
+    ? Math.min(scaleX, playScaleY)
+    : Math.min(scaleX, Math.max(playScaleY, availHeight / WORLD_HEIGHT));
+  const offsetX = (safeW - WORLD_WIDTH * scale) * 0.5;
+  const playBottom = safeH - bottomInset;
+  const offsetY = playBottom - 595 * scale;
+
+  return { scale, offsetX, offsetY };
+}
+
 export function createParticlePool(): Particle[] {
   return Array.from({ length: MAX_PARTICLES }, () => ({
     active: false,
@@ -155,10 +197,18 @@ export const BattlefieldCanvas: React.FC<BattlefieldCanvasProps> = ({
       }
     };
 
+    const onOrientationResize = () => {
+      updateSize();
+      window.setTimeout(updateSize, 120);
+      window.setTimeout(updateSize, 320);
+    };
+
     const resizeObserver = new ResizeObserver(() => {
       updateSize();
     });
     resizeObserver.observe(canvas);
+    window.addEventListener('resize', onOrientationResize);
+    window.addEventListener('orientationchange', onOrientationResize);
     updateSize();
 
     const rebuildTerrainBitmap = (terrain: Float32Array) => {
@@ -449,19 +499,16 @@ export const BattlefieldCanvas: React.FC<BattlefieldCanvasProps> = ({
         sim.terrainDirty = false;
       }
 
-      // Fit full battlefield width on portrait/mobile while covering wide screens cleanly
+      // Fit full battlefield width on portrait/mobile and reserve HUD insets cleanly
       const dpr =
         qualityRef.current === 'eco'
           ? 0.75
           : Math.min(window.devicePixelRatio || 1, preset.maxDpr);
-      const scaleX = logicalWidth / WORLD_WIDTH;
-      const scaleY = logicalHeight / WORLD_HEIGHT;
-      const scale = logicalWidth < logicalHeight ? scaleX : Math.max(scaleX, scaleY);
-      const offsetX = (logicalWidth - WORLD_WIDTH * scale) * 0.5;
-      const offsetY =
-        logicalWidth < logicalHeight
-          ? (logicalHeight - WORLD_HEIGHT * scale) * 0.42
-          : (logicalHeight - WORLD_HEIGHT * scale) * 0.5;
+      const { scale, offsetX, offsetY } = computeBattlefieldTransform(
+        logicalWidth,
+        logicalHeight,
+        sim.screenState
+      );
 
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -622,6 +669,8 @@ export const BattlefieldCanvas: React.FC<BattlefieldCanvasProps> = ({
       cancelAnimationFrame(animId);
       if (pendingTimer !== null) clearTimeout(pendingTimer);
       resizeObserver.disconnect();
+      window.removeEventListener('resize', onOrientationResize);
+      window.removeEventListener('orientationchange', onOrientationResize);
     };
   }, [simRef]);
 
@@ -630,14 +679,11 @@ export const BattlefieldCanvas: React.FC<BattlefieldCanvasProps> = ({
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return null;
-    const scaleX = rect.width / WORLD_WIDTH;
-    const scaleY = rect.height / WORLD_HEIGHT;
-    const scale = rect.width < rect.height ? scaleX : Math.max(scaleX, scaleY);
-    const offsetX = (rect.width - WORLD_WIDTH * scale) * 0.5;
-    const offsetY =
-      rect.width < rect.height
-        ? (rect.height - WORLD_HEIGHT * scale) * 0.42
-        : (rect.height - WORLD_HEIGHT * scale) * 0.5;
+    const { scale, offsetX, offsetY } = computeBattlefieldTransform(
+      rect.width,
+      rect.height,
+      simRef.current.screenState
+    );
     return {
       x: (clientX - rect.left - offsetX) / scale,
       y: (clientY - rect.top - offsetY) / scale,

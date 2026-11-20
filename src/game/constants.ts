@@ -108,6 +108,8 @@ export interface QualityPreset {
   cloudsCount: number;
   showMountains: boolean;
   showTrails: boolean;
+  parallaxDepth: 1 | 2 | 3;
+  showWindStreaks: boolean;
 }
 
 export const QUALITY_PRESETS: Record<QualityTier, QualityPreset> = {
@@ -120,26 +122,32 @@ export const QUALITY_PRESETS: Record<QualityTier, QualityPreset> = {
     cloudsCount: 2,
     showMountains: false,
     showTrails: false,
+    parallaxDepth: 1,
+    showWindStreaks: false,
   },
   balanced: {
     id: 'balanced',
     label: 'Standard',
-    description: '1.5x crisp vector graphics and smooth particles',
+    description: '1.5x crisp vector graphics and smooth parallax depth',
     maxDpr: 1.5,
     maxParticles: 36,
     cloudsCount: 4,
     showMountains: true,
     showTrails: true,
+    parallaxDepth: 2,
+    showWindStreaks: true,
   },
   high: {
     id: 'high',
     label: 'Ultra Vector',
-    description: 'Full 2x retina crispness, layered clouds & shell trails',
+    description: 'Full 2x retina crispness, multi-plane parallax & wind streaks',
     maxDpr: 2,
     maxParticles: 72,
     cloudsCount: 6,
     showMountains: true,
     showTrails: true,
+    parallaxDepth: 3,
+    showWindStreaks: true,
   },
 };
 

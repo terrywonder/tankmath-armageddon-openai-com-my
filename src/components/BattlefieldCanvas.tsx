@@ -1,9 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import { QUALITY_PRESETS, WORLD_HEIGHT, WORLD_WIDTH } from '../game/constants';
+import {
+  PARALLAX_TILE_PERIOD,
+  computeGameProgress,
+  computeParallaxOffsets,
+  createParallaxState,
+  getLayerWrapOffset,
+  getSkyAtmosphere,
+  stepParallaxState,
+  type SkyAtmosphere,
+} from '../game/parallax';
 import { getMuzzlePosition, getTerrainY, previewTrajectory } from '../game/physics';
 import type {
   FloatingText,
+  GameMode,
   GameScreenState,
+  MathTier,
   ProjectileEntity,
   QualityTier,
   TankEntity,
@@ -24,6 +36,11 @@ export interface Particle {
 
 export interface BattlefieldSimulationState {
   screenState: GameScreenState;
+  mode: GameMode;
+  wave: number;
+  maxWaves: number | null;
+  tier: MathTier;
+  score: number;
   terrain: Float32Array;
   terrainDirty: boolean;
   tanks: TankEntity[];
@@ -171,6 +188,22 @@ export const BattlefieldCanvas: React.FC<BattlefieldCanvasProps> = ({
     let logicalHeight = canvas.clientHeight || 640;
     let cachedSkyGrad: CanvasGradient | null = null;
     let cachedSkyHeight = 0;
+    let cachedAtmoBucket = -1;
+    let cachedAtmo: SkyAtmosphere = getSkyAtmosphere(0);
+    const parallax = createParallaxState(simRef.current.windAccel, 0);
+    const farClouds = parallax.clouds.filter((c) => c.layer === 'far');
+    const nearClouds = parallax.clouds.filter((c) => c.layer === 'near');
+    let lastAttrProgress = '';
+    let lastAttrWind = '';
+
+    const rebuildSkyGrad = (atmo: SkyAtmosphere) => {
+      const grad = ctx.createLinearGradient(0, 0, 0, logicalHeight);
+      grad.addColorStop(0, atmo.skyTop);
+      grad.addColorStop(0.55, atmo.skyMid);
+      grad.addColorStop(1, atmo.skyBottom);
+      cachedSkyGrad = grad;
+      cachedSkyHeight = logicalHeight;
+    };
 
     const updateSize = () => {
       const rect = canvas.getBoundingClientRect();
@@ -189,11 +222,7 @@ export const BattlefieldCanvas: React.FC<BattlefieldCanvasProps> = ({
         canvas.height = targetH;
       }
       if (!cachedSkyGrad || cachedSkyHeight !== logicalHeight) {
-        cachedSkyGrad = ctx.createLinearGradient(0, 0, 0, logicalHeight);
-        cachedSkyGrad.addColorStop(0, '#0284C7');
-        cachedSkyGrad.addColorStop(0.55, '#38BDF8');
-        cachedSkyGrad.addColorStop(1, '#BAE6FD');
-        cachedSkyHeight = logicalHeight;
+        rebuildSkyGrad(cachedAtmo);
       }
     };
 
@@ -282,20 +311,179 @@ export const BattlefieldCanvas: React.FC<BattlefieldCanvasProps> = ({
       }
     };
 
-    const drawVectorCloud = (x: number, y: number, scale: number) => {
+    const drawVectorCloud = (
+      x: number,
+      y: number,
+      scale: number,
+      fillColor: string,
+      alpha: number = 1,
+      outlined: boolean = true
+    ) => {
       ctx.save();
+      ctx.globalAlpha = alpha;
       ctx.translate(x, y);
       ctx.scale(scale, scale);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.strokeStyle = '#0F172A';
-      ctx.lineWidth = 2.5;
+      ctx.fillStyle = fillColor;
       ctx.beginPath();
       ctx.arc(0, 0, 22, Math.PI * 0.5, Math.PI * 1.5);
       ctx.arc(24, -12, 26, Math.PI * 1, Math.PI * 1.9);
       ctx.arc(54, -4, 20, Math.PI * 1.2, Math.PI * 0.5);
       ctx.closePath();
       ctx.fill();
+      if (outlined) {
+        ctx.strokeStyle = '#0F172A';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
+    const drawFarMountainTile = (
+      tileX: number,
+      atmo: SkyAtmosphere,
+      showFacets: boolean
+    ) => {
+      // Seamless period-1200 ridge profile (start y === end y === 415)
+      const pts: ReadonlyArray<[number, number]> = [
+        [0, 415],
+        [135, 295],
+        [275, 392],
+        [435, 250],
+        [610, 368],
+        [770, 276],
+        [935, 386],
+        [1075, 308],
+        [1200, 415],
+      ];
+
+      ctx.fillStyle = atmo.farRidgeFill;
+      ctx.beginPath();
+      ctx.moveTo(tileX, WORLD_HEIGHT);
+      for (const [px, py] of pts) {
+        ctx.lineTo(tileX + px, py);
+      }
+      ctx.lineTo(tileX + PARALLAX_TILE_PERIOD, WORLD_HEIGHT);
+      ctx.closePath();
+      ctx.fill();
+
+      // Sunlit vector peak facets on Ultra Vector quality
+      if (showFacets) {
+        const peaks: ReadonlyArray<[number, number, number]> = [
+          [135, 295, 62],
+          [435, 250, 82],
+          [770, 276, 70],
+          [1075, 308, 56],
+        ];
+        ctx.fillStyle = atmo.farRidgeHighlight;
+        for (const [px, py, drop] of peaks) {
+          ctx.beginPath();
+          ctx.moveTo(tileX + px, py);
+          ctx.lineTo(tileX + px + drop * 0.72, py + drop);
+          ctx.lineTo(tileX + px - drop * 0.14, py + drop * 0.68);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+    };
+
+    const drawMidHillTile = (tileX: number, atmo: SkyAtmosphere, showSilhouettes: boolean) => {
+      // Seamless rolling midground hills (start y === end y === 456)
+      ctx.fillStyle = atmo.midHillFill;
+      ctx.beginPath();
+      ctx.moveTo(tileX, WORLD_HEIGHT);
+      ctx.lineTo(tileX, 456);
+      ctx.quadraticCurveTo(tileX + 150, 368, tileX + 300, 428);
+      ctx.quadraticCurveTo(tileX + 460, 492, tileX + 610, 394);
+      ctx.quadraticCurveTo(tileX + 770, 318, tileX + 930, 416);
+      ctx.quadraticCurveTo(tileX + 1070, 495, tileX + 1200, 456);
+      ctx.lineTo(tileX + PARALLAX_TILE_PERIOD, WORLD_HEIGHT);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = atmo.midHillStroke;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tileX, 456);
+      ctx.quadraticCurveTo(tileX + 150, 368, tileX + 300, 428);
+      ctx.quadraticCurveTo(tileX + 460, 492, tileX + 610, 394);
+      ctx.quadraticCurveTo(tileX + 770, 318, tileX + 930, 416);
+      ctx.quadraticCurveTo(tileX + 1070, 495, tileX + 1200, 456);
       ctx.stroke();
+
+      // Stylized distant vector pines perched on hill crests
+      if (showSilhouettes) {
+        const trees: ReadonlyArray<[number, number, number]> = [
+          [135, 405, 16],
+          [156, 403, 12],
+          [608, 398, 17],
+          [752, 364, 15],
+          [774, 362, 19],
+          [795, 368, 13],
+        ];
+        ctx.fillStyle = atmo.midHillFill;
+        for (const [tx, ty, h] of trees) {
+          ctx.beginPath();
+          ctx.moveTo(tileX + tx, ty - h);
+          ctx.lineTo(tileX + tx - h * 0.42, ty + 4);
+          ctx.lineTo(tileX + tx + h * 0.42, ty + 4);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+    };
+
+    const drawNearFoothillTile = (tileX: number, atmo: SkyAtmosphere) => {
+      // Closer meadow ridge behind the playable destructible terrain (start y === end y === 498)
+      ctx.fillStyle = atmo.nearFoothillFill;
+      ctx.beginPath();
+      ctx.moveTo(tileX, WORLD_HEIGHT);
+      ctx.lineTo(tileX, 498);
+      ctx.quadraticCurveTo(tileX + 200, 434, tileX + 410, 488);
+      ctx.quadraticCurveTo(tileX + 630, 536, tileX + 840, 452);
+      ctx.quadraticCurveTo(tileX + 1020, 408, tileX + 1200, 498);
+      ctx.lineTo(tileX + PARALLAX_TILE_PERIOD, WORLD_HEIGHT);
+      ctx.closePath();
+      ctx.fill();
+    };
+
+    const drawWindStreaks = (windAccel: number, scrollX: number, timeSec: number) => {
+      const absWind = Math.abs(windAccel);
+      if (absWind < 8) return;
+      const intensity = Math.min(1, absWind / 85);
+      const dir = windAccel >= 0 ? 1 : -1;
+      const wrapSpan = WORLD_WIDTH + 240;
+
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = `rgba(255, 255, 255, ${(0.18 + intensity * 0.34).toFixed(2)})`;
+      ctx.lineWidth = 1.6 + intensity * 1.1;
+
+      for (let i = 0; i < parallax.streaks.length; i++) {
+        const s = parallax.streaks[i];
+        const sx =
+          getLayerWrapOffset(s.baseX + scrollX * s.speedFactor, wrapSpan) - 120;
+        const len = s.length * (0.7 + intensity * 0.75);
+        const sy = s.y + Math.sin(timeSec * 2.4 + i * 1.7) * s.waveAmp;
+
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo(
+          sx + dir * len * 0.5,
+          sy - s.waveAmp * 0.7,
+          sx + dir * len,
+          sy + s.waveAmp * 0.25
+        );
+        ctx.stroke();
+
+        // Crisp subtle wind curl tail on strong gusts
+        if (intensity > 0.45 && i % 2 === 0) {
+          const tipX = sx + dir * len;
+          const tipY = sy + s.waveAmp * 0.25;
+          ctx.beginPath();
+          ctx.arc(tipX - dir * 4, tipY - 5, 5, 0, Math.PI * 1.15, dir < 0);
+          ctx.stroke();
+        }
+      }
       ctx.restore();
     };
 
@@ -513,7 +701,37 @@ export const BattlefieldCanvas: React.FC<BattlefieldCanvasProps> = ({
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Vibrant Worms Armageddon Sky Gradient (cached)
+      // Step parallax state driven by live wind speed & game progress
+      const targetProgress = computeGameProgress({
+        screenState: sim.screenState,
+        mode: sim.mode,
+        wave: sim.wave,
+        maxWaves: sim.maxWaves,
+        tier: sim.tier,
+        score: sim.score,
+      });
+      stepParallaxState(parallax, sim.windAccel, targetProgress, dt);
+
+      const atmoBucket = Math.round(parallax.smoothProgress * 40);
+      if (atmoBucket !== cachedAtmoBucket) {
+        cachedAtmoBucket = atmoBucket;
+        cachedAtmo = getSkyAtmosphere(parallax.smoothProgress);
+        rebuildSkyGrad(cachedAtmo);
+      }
+
+      // Expose quantized parallax telemetry attributes only when rounded values change
+      const attrProg = parallax.smoothProgress.toFixed(2);
+      const attrWind = String(Math.round(parallax.smoothWind));
+      if (attrProg !== lastAttrProgress) {
+        lastAttrProgress = attrProg;
+        canvas.dataset.parallaxProgress = attrProg;
+      }
+      if (attrWind !== lastAttrWind) {
+        lastAttrWind = attrWind;
+        canvas.dataset.parallaxWind = attrWind;
+      }
+
+      // Vibrant Dynamic Sky Gradient (cached by height & progress bucket)
       ctx.fillStyle = cachedSkyGrad || '#38BDF8';
       ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
@@ -535,30 +753,94 @@ export const BattlefieldCanvas: React.FC<BattlefieldCanvasProps> = ({
       const shakeX = shakeMag > 0.1 ? (Math.random() - 0.5) * shakeMag : 0;
       const shakeY = shakeMag > 0.1 ? (Math.random() - 0.5) * shakeMag : 0;
 
+      const parallaxOffsets = computeParallaxOffsets(parallax, titlePanX);
+
       ctx.translate(offsetX + titlePanX + shakeX, offsetY + shakeY);
       ctx.scale(scale, scale);
 
-      // Distant Vector Mountains (disabled in Eco mode for low-end specs)
-      if (preset.showMountains) {
-        ctx.fillStyle = 'rgba(14, 116, 144, 0.28)';
-        ctx.beginPath();
-        ctx.moveTo(-80, WORLD_HEIGHT);
-        ctx.lineTo(120, 320);
-        ctx.lineTo(310, 420);
-        ctx.lineTo(540, 270);
-        ctx.lineTo(780, 400);
-        ctx.lineTo(1010, 290);
-        ctx.lineTo(1280, 440);
-        ctx.lineTo(1280, WORLD_HEIGHT);
-        ctx.closePath();
-        ctx.fill();
+      // Layer 0: Crisp Twilight Vector Stars (visible on sunset/twilight progress waves)
+      if (cachedAtmo.starAlpha > 0.04 && preset.parallaxDepth >= 2) {
+        ctx.save();
+        for (let i = 0; i < 18; i++) {
+          const sx = getLayerWrapOffset(i * 73 + 31 + parallaxOffsets.celestialX * 0.5, WORLD_WIDTH);
+          const sy = 26 + ((i * 47) % 190);
+          const twinkle = 0.65 + 0.35 * Math.sin(timeSec * 2.2 + i * 1.9);
+          ctx.globalAlpha = cachedAtmo.starAlpha * twinkle;
+          ctx.fillStyle = '#FEF9C3';
+          ctx.beginPath();
+          ctx.arc(sx, sy, i % 3 === 0 ? 2.1 : 1.3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
       }
 
-      // Drifting Vector Clouds
-      for (let i = 0; i < preset.cloudsCount; i++) {
-        const cx = ((i * 250 + timeSec * (12 + (i % 3) * 5) + sim.windAccel * 0.25) % (WORLD_WIDTH + 220)) - 110;
-        const cy = 75 + (i % 3) * 46;
-        drawVectorCloud(cx, cy, 0.72 + (i % 2) * 0.25);
+      // Layer 1: Celestial Body (Sun arcing across sky into twilight moon with game progress)
+      if (preset.parallaxDepth >= 2) {
+        const celX = cachedAtmo.celestialXRatio * WORLD_WIDTH + parallaxOffsets.celestialX;
+        const celY = cachedAtmo.celestialYRatio * WORLD_HEIGHT;
+        ctx.save();
+        ctx.fillStyle = cachedAtmo.celestialHalo;
+        ctx.beginPath();
+        ctx.arc(celX, celY, 44, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(celX, celY, 31, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = cachedAtmo.celestialColor;
+        ctx.beginPath();
+        ctx.arc(celX, celY, 21, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Layer 2: Distant Vector Mountains (seamlessly tiled & shifted by progress + wind sway)
+      if (preset.showMountains && preset.parallaxDepth >= 2) {
+        const farShift = getLayerWrapOffset(parallaxOffsets.farMountainsX, PARALLAX_TILE_PERIOD);
+        const showFacets = preset.parallaxDepth >= 3;
+        drawFarMountainTile(farShift - PARALLAX_TILE_PERIOD, cachedAtmo, showFacets);
+        drawFarMountainTile(farShift, cachedAtmo, showFacets);
+      }
+
+      // Layer 3: High-Altitude Distant Clouds (soft, slower wind drift)
+      if (preset.parallaxDepth >= 2) {
+        const farWrap = WORLD_WIDTH + 240;
+        const farCount = preset.parallaxDepth >= 3 ? farClouds.length : 2;
+        for (let i = 0; i < farCount; i++) {
+          const c = farClouds[i];
+          const cx =
+            getLayerWrapOffset(c.baseX + parallaxOffsets.farCloudsX * c.speedFactor, farWrap) - 120;
+          drawVectorCloud(cx, c.y, c.scale, cachedAtmo.cloudFill, cachedAtmo.farCloudAlpha, false);
+        }
+      }
+
+      // Layer 4: Midground Rolling Vector Hills + Pine Silhouettes
+      if (preset.showMountains && preset.parallaxDepth >= 2) {
+        const midShift = getLayerWrapOffset(parallaxOffsets.midHillsX, PARALLAX_TILE_PERIOD);
+        const showTrees = preset.parallaxDepth >= 2;
+        drawMidHillTile(midShift - PARALLAX_TILE_PERIOD, cachedAtmo, showTrees);
+        drawMidHillTile(midShift, cachedAtmo, showTrees);
+      }
+
+      // Layer 5: Near Foothill Meadow Silhouette (Ultra Vector 3rd depth plane)
+      if (preset.showMountains && preset.parallaxDepth >= 3) {
+        const nearShift = getLayerWrapOffset(parallaxOffsets.nearFoothillsX, PARALLAX_TILE_PERIOD);
+        drawNearFoothillTile(nearShift - PARALLAX_TILE_PERIOD, cachedAtmo);
+        drawNearFoothillTile(nearShift, cachedAtmo);
+      }
+
+      // Layer 6: Near Foreground-Sky Vector Clouds (bold Worms Armageddon outlines, wind-driven)
+      const nearWrap = WORLD_WIDTH + 240;
+      const nearCount = Math.min(preset.cloudsCount, nearClouds.length);
+      for (let i = 0; i < nearCount; i++) {
+        const c = nearClouds[i];
+        const cx =
+          getLayerWrapOffset(c.baseX + parallaxOffsets.nearCloudsX * c.speedFactor, nearWrap) - 120;
+        drawVectorCloud(cx, c.y, c.scale, cachedAtmo.cloudFill, 1, true);
+      }
+
+      // Layer 7: Aerodynamic Wind Gust Ribbons (diegetic wind direction & velocity feedback)
+      if (preset.showWindStreaks) {
+        drawWindStreaks(parallax.smoothWind, parallaxOffsets.windStreaksX, timeSec);
       }
 
       // Draw pre-rendered destructible terrain bitmap

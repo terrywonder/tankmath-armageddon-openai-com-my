@@ -168,6 +168,11 @@ function createInitialTitleSim(tankColor: string): BattlefieldSimulationState {
   const enemy = buildEnemyTank('scout', 0, 960, terrain, 70);
   return {
     screenState: 'title',
+    mode: 'tutorial',
+    wave: 1,
+    maxWaves: 4,
+    tier: 1,
+    score: 0,
     terrain,
     terrainDirty: true,
     tanks: [player, enemy],
@@ -534,6 +539,11 @@ export default function App() {
       );
 
       const sim = simRef.current;
+      sim.mode = mode;
+      sim.wave = wave;
+      sim.maxWaves = runMetaRef.current.maxWaves;
+      sim.tier = tier;
+      sim.score = runMetaRef.current.score;
       sim.terrain = terrain;
       sim.terrainDirty = true;
       sim.tanks = [player, ...enemies];
@@ -762,6 +772,7 @@ export default function App() {
           meta.minTier
         );
         meta.highestTier = Math.max(meta.highestTier, meta.tier) as MathTier;
+        sim.tier = meta.tier;
       }
 
       const weapon = getEffectiveWeaponSpec(meta.selectedWeapon, save.weaponUpgrades);
@@ -938,6 +949,7 @@ export default function App() {
                 windAbs: Math.abs(sim.windAccel),
               });
               meta.score += pts + (hit.defeated ? 150 : 0);
+              sim.score = meta.score;
             }
           }
           syncHudFromSim();

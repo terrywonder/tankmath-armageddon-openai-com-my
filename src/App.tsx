@@ -57,8 +57,11 @@ import {
   auth,
   fetchGlobalLeaderboard,
   loadSaveFromCloud,
+  sendPasswordReset,
+  signInWithEmail,
   signInWithGoogle,
   signOutUser,
+  signUpWithEmail,
   syncSaveToCloud,
   upsertLeaderboardEntry,
 } from './services/firebase';
@@ -1265,6 +1268,15 @@ export default function App() {
         onRefresh={() => void refreshLeaderboard()}
         onSignIn={() => {
           void signInWithGoogle().catch(() => {});
+        }}
+        onSignUpWithEmail={async (email, password, displayName) => {
+          await signUpWithEmail(email, password, displayName);
+        }}
+        onSignInWithEmail={async (email, password) => {
+          await signInWithEmail(email, password);
+        }}
+        onResetPassword={async (email) => {
+          await sendPasswordReset(email);
         }}
         onSignOut={() => {
           void signOutUser().catch(() => {});

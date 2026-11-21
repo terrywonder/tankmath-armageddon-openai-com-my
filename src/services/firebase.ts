@@ -1,9 +1,14 @@
 import { initializeApp } from 'firebase/app';
 import {
+  createUserWithEmailAndPassword,
   getAuth,
   GoogleAuthProvider,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updateProfile,
   type User,
 } from 'firebase/auth';
 import {
@@ -99,6 +104,34 @@ export async function signInWithGoogle(): Promise<User> {
   provider.setCustomParameters({ prompt: 'select_account' });
   const result = await signInWithPopup(auth, provider);
   return result.user;
+}
+
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  displayName?: string
+): Promise<User> {
+  const cleanEmail = email.trim().toLowerCase();
+  const result = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+  if (displayName && displayName.trim().length >= 2) {
+    await updateProfile(result.user, { displayName: displayName.trim().slice(0, 40) });
+  }
+  try {
+    await sendEmailVerification(result.user);
+  } catch {
+    // Non-blocking verification email send
+  }
+  return result.user;
+}
+
+export async function signInWithEmail(email: string, password: string): Promise<User> {
+  const cleanEmail = email.trim().toLowerCase();
+  const result = await signInWithEmailAndPassword(auth, cleanEmail, password);
+  return result.user;
+}
+
+export async function sendPasswordReset(email: string): Promise<void> {
+  await sendPasswordResetEmail(auth, email.trim().toLowerCase());
 }
 
 export async function signOutUser(): Promise<void> {
